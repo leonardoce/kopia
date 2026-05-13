@@ -634,6 +634,30 @@ func makeGRPCServerState(maxConcurrency int) grpcServerState {
 	}
 }
 
+// errorLoggingStream wraps a grpc.ServerStream to log error responses
+// before they are sent to the client.
+type errorLoggingStream struct {
+	grpc.ServerStream
+}
+
+func (s *errorLoggingStream) SendMsg(m any) error {
+	if resp, ok := m.(*grpcapi.SessionResponse); ok {
+		if errResp := resp.GetError(); errResp != nil && errResp.GetCode() != grpcapi.ErrorResponse_ACCESS_DENIED {
+			userLog(s.Context()).Errorf("session error response: %v (code: %v)", errResp.GetMessage(), errResp.GetCode())
+		}
+	}
+
+	return s.ServerStream.SendMsg(m)
+}
+
+// sessionErrorLogInterceptor returns a gRPC stream interceptor that logs
+// error responses sent through the Session streaming RPC.
+func sessionErrorLogInterceptor() grpc.StreamServerInterceptor {
+	return func(srv any, ss grpc.ServerStream, _ *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+		return handler(srv, &errorLoggingStream{ServerStream: ss})
+	}
+}
+
 // GRPCRouterHandler returns HTTP handler that supports GRPC services and
 // routes non-GRPC calls to the provided handler.
 func (s *Server) GRPCRouterHandler(handler http.Handler) http.Handler {
@@ -641,10 +665,16 @@ func (s *Server) GRPCRouterHandler(handler http.Handler) http.Handler {
 	defer s.grpcMutex.Unlock()
 
 	if s.grpcServer == nil {
-		s.grpcServer = grpc.NewServer(
+		opts := []grpc.ServerOption{
 			grpc.MaxSendMsgSize(repo.MaxGRPCMessageSize),
 			grpc.MaxRecvMsgSize(repo.MaxGRPCMessageSize),
-		)
+		}
+
+		if s.options.LogSessionErrors {
+			opts = append(opts, grpc.StreamInterceptor(sessionErrorLogInterceptor()))
+		}
+
+		s.grpcServer = grpc.NewServer(opts...)
 
 		s.RegisterGRPCHandlers(s.grpcServer)
 	}

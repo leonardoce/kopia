@@ -849,6 +849,7 @@ type Options struct {
 	PasswordPersist          passwordpersist.Strategy
 	AuthCookieSigningKey     string
 	LogRequests              bool
+	LogSessionErrors         bool
 	UIUser                   string // name of the user allowed to access the UI API
 	UIPreferencesFile        string // name of the JSON file storing UI preferences
 	ServerControlUser        string // name of the user allowed to access the server control API

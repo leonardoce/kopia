@@ -75,7 +75,8 @@ type commandServerStart struct {
 	shutdownGracePeriod  time.Duration
 	kopiauiNotifications bool
 
-	logServerRequests bool
+	logServerRequests  bool
+	logSessionErrors   bool
 
 	serverStartAllowDangerousUnauthenticatedNetwork bool
 
@@ -131,6 +132,7 @@ func (c *commandServerStart) setup(svc advancedAppServices, parent commandParent
 	cmd.Flag("ui-preferences-file", "Path to JSON file storing UI preferences").StringVar(&c.uiPreferencesFile)
 
 	cmd.Flag("log-server-requests", "Log server requests").Hidden().BoolVar(&c.logServerRequests)
+	cmd.Flag("log-session-errors", "Log error responses sent to clients during gRPC sessions").BoolVar(&c.logSessionErrors)
 	cmd.Flag("disable-csrf-token-checks", "Disable CSRF token").Hidden().BoolVar(&c.disableCSRFTokenChecks)
 
 	cmd.Flag("shutdown-grace-period", "Grace period for shutting down the server").Default("5s").DurationVar(&c.shutdownGracePeriod)
@@ -167,6 +169,7 @@ func (c *commandServerStart) serverStartOptions(ctx context.Context) (*server.Op
 		UIUser:               c.sf.serverUsername,
 		ServerControlUser:    c.serverControlUsername,
 		LogRequests:          c.logServerRequests,
+		LogSessionErrors:     c.logSessionErrors,
 		PasswordPersist:      c.svc.passwordPersistenceStrategy(),
 		UIPreferencesFile:    uiPreferencesFile,
 		UITitlePrefix:        c.uiTitlePrefix,
