@@ -642,7 +642,7 @@ type errorLoggingStream struct {
 
 func (s *errorLoggingStream) SendMsg(m any) error {
 	if resp, ok := m.(*grpcapi.SessionResponse); ok {
-		if errResp := resp.GetError(); errResp != nil && errResp.GetCode() != grpcapi.ErrorResponse_ACCESS_DENIED {
+		if errResp := resp.GetError(); errResp != nil {
 			userLog(s.Context()).Errorf("session error response: %v (code: %v)", errResp.GetMessage(), errResp.GetCode())
 		}
 	}

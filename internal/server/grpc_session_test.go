@@ -44,18 +44,6 @@ func TestErrorLoggingStream_SendMsg(t *testing.T) {
 			wantLogged: "no space left on device",
 		},
 		{
-			name: "skips ACCESS_DENIED response",
-			msg: &grpcapi.SessionResponse{
-				Response: &grpcapi.SessionResponse_Error{
-					Error: &grpcapi.ErrorResponse{
-						Code:    grpcapi.ErrorResponse_ACCESS_DENIED,
-						Message: "access denied",
-					},
-				},
-			},
-			wantLogged: "",
-		},
-		{
 			name: "ignores non-error response",
 			msg: &grpcapi.SessionResponse{
 				Response: &grpcapi.SessionResponse_GetContentInfo{},
